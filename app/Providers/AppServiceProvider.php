@@ -24,26 +24,25 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-//       необходим если забудем добавить игрлоад,
-        Model::preventLazyLoading(!app()->isProduction());
-        //вызывает эксепшн если будем сохранять поле, которое отсутствует в fillable
-        Model::preventSilentlyDiscardingAttributes();
-        // когда запрос к бд > чем количество мс оповещает
-        DB::whenQueryingForLongerThan(500, function (Connection $connection) {
-            logger()
-                ->channel('telegram')
-                ->debug('whenQueryLongerThan: ' . $connection->query()->toSql());
-        });
+        Model::shouldBeStrict(!app()->isProduction());
 
-        $kernel = app(Kernel::class);
+        if(app()->isProduction()) {
+            DB::listen(function ($query) {
+                if($query->time > 100) {
+                    logger()
+                        ->channel('telegram')
+                        ->debug('query longer than 1ms: ' . $query->sql, $query->bindings);
+                }
+            });
 
-        $kernel->whenRequestLifecycleIsLongerThan(
-            CarbonInterval::seconds(4),
-            function () {
-                logger()
-                    ->channel('telegram')
-                    ->debug('Долгий запрос: ' . request()->url());
-            }
-        );
+            app(Kernel::class)->whenRequestLifecycleIsLongerThan(
+                CarbonInterval::seconds(4),
+                function () {
+                    logger()
+                        ->channel('telegram')
+                        ->debug('Долгий запрос: ' . request()->url());
+                }
+            );
+        }
     }
 }
