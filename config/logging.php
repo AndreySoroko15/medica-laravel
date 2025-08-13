@@ -127,6 +127,14 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'telegram' => [
+            'driver' => 'custom', // Laravel говорит: "используй свою фабрику для логов"
+            'via' => \App\Logging\Telegram\TelegramLoggerFactory::class, // указываем фабрику
+            'level' => env('LOG_LEVEL', 'debug'), // минимальный уровень логов
+            'chat_id' => -4938152561,
+            'token' => '8402051902:AAHYVaZUXSNKWukA7WOjCfIZCV5xgsAiZ4c',
+        ],
+
     ],
 
 ];
